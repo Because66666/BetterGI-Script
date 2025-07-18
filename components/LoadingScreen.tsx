@@ -18,7 +18,7 @@ export function LoadingScreen({ loadingState, onRetry }: LoadingScreenProps) {
       {/* Logo和标题 */}
       <div className="flex items-center gap-3 mb-12">
         <img
-          src="/favicon.ico"
+          src="https://bgi.sh/favicon.ico"
           alt="BetterGI Logo"
           className="w-12 h-12"
           onError={(e) => {

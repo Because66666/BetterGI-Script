@@ -71,7 +71,7 @@ export default function Component() {
         }`}
       >
         <img
-          src="/favicon.ico"
+          src="https://bgi.sh/favicon.ico"
           alt="BetterGI Logo"
           className="w-8 h-8"
           onError={(e) => {
