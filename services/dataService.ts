@@ -353,14 +353,13 @@ export class DataService {
         const pathingItems = this.getRawItemsByCategory(data, "地图追踪")
         const pathingGrouped = this.groupItemsBySubscription(pathingItems)
         allUnifiedItems.push(...pathingGrouped.map((item) => this.groupedItemToUnified(item)))
-        console.log('地图追踪聚合数据:', pathingGrouped) // 添加日志输出
+        
         // 添加其他类别的原始数据
         const otherCategories: CategoryKey[] = ["JS脚本", "战斗策略", "七圣召唤"]
         otherCategories.forEach((cat) => {
           const items = this.getRawItemsByCategory(data, cat)
           allUnifiedItems.push(...items.map((item) => this.dataItemToUnified(item)))
         })
-
         this.processedData.set(categoryKey, allUnifiedItems)
       } else {
         // 其他类别：使用原始数据

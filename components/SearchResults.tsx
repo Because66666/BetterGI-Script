@@ -46,11 +46,15 @@ export function SearchResults({
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget
 
-    // 当滚动到底部附近时加载更多
-    if (scrollHeight - scrollTop <= clientHeight + 100) {
-      const totalItems = isGrouped ? groupedItems?.length || 0 : items.length
-      if (visibleCount < totalItems) {
-        setVisibleCount((prev) => Math.min(prev + 5, totalItems))
+    // 当滚动到底部附近时加载更多（提前50px触发）
+    if (scrollHeight - scrollTop <= clientHeight + 50) {
+      // 使用与 displayItems 相同的 totalItems 计算逻辑
+      const totalItemsCount = isGrouped 
+        ? groupedItems?.length || 0 
+        : (items.length + (groupedItems?.length || 0))
+      
+      if (visibleCount < totalItemsCount) {
+        setVisibleCount((prev) => Math.min(prev + 5, totalItemsCount))
       }
     }
   }
@@ -60,8 +64,17 @@ export function SearchResults({
     setVisibleCount(5)
   }, [searchText, isGrouped])
 
-  const displayItems = isGrouped ? groupedItems?.slice(0, visibleCount) || [] : items.slice(0, visibleCount)
-  const totalItems = isGrouped ? groupedItems?.length || 0 : items.length
+  // 修复：在非分组模式下，合并单个项目和聚合项目
+  const displayItems = isGrouped 
+    ? groupedItems?.slice(0, visibleCount) || [] 
+    : [
+        ...(groupedItems || []),
+        ...items
+      ].slice(0, visibleCount)
+  
+  const totalItems = isGrouped 
+    ? groupedItems?.length || 0 
+    : (items.length + (groupedItems?.length || 0))
 
   return (
     <div ref={containerRef} className="space-y-3 max-w-md w-full max-h-96 overflow-y-auto" onScroll={handleScroll}>
@@ -110,72 +123,115 @@ export function SearchResults({
                   )} */}
                 </div>
               ))
-            : (displayItems as DataItem[]).map((item, index) => {
-                const matchingTags = dataService.getMatchingTags(item.tags, searchText)
-                const { displayName, pathInfo } = parseNameAndPath(item.name)
+            : displayItems.map((item, index) => {
+                // 判断是聚合项目还是单个项目
+                if ('count' in item && 'id' in item) {
+                  // 渲染聚合项目
+                  const group = item as GroupedDataItem
+                  return (
+                    <div
+                      key={group.id}
+                      onClick={() => onItemClick(group)}
+                      className={`p-4 cursor-pointer text-left transition-all duration-300 transform rounded-lg opacity-0 animate-fade-in-up ${
+                        selectedItem && "id" in selectedItem && selectedItem.id === group.id
+                          ? "bg-gray-50 shadow-md scale-101 border-b-2 border-blue-500"
+                          : "bg-white shadow-sm hover:shadow-lg hover:-translate-y-0.5 border border-gray-100"
+                      }`}
+                      style={{
+                        animationDelay: `${index * 100}ms`,
+                        animationFillMode: "forwards",
+                      }}
+                    >
+                      <div className="font-bold text-gray-900 text-sm leading-tight flex items-center justify-between">
+                        <span>{group.name}</span>
+                        <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">{group.count} 项</span>
+                      </div>
 
-                return (
-                  <div
-                    key={`${item.name}-${index}`}
-                    onClick={() => {
-                      onItemClick(item)
-                      // 调试：打印路径信息
-                      dataService.debugPathInfo(item)
-                    }}
-                    className={`p-4 cursor-pointer text-left transition-all duration-300 transform rounded-lg opacity-0 animate-fade-in-up ${
-                      selectedItem && "name" in selectedItem && selectedItem.name === item.name
-                        ? "bg-gray-50 shadow-md scale-101 border-b-2 border-blue-500"
-                        : "bg-white shadow-sm hover:shadow-lg hover:-translate-y-0.5 border border-gray-100"
-                    }`}
-                    style={{
-                      animationDelay: `${index * 100}ms`,
-                      animationFillMode: "forwards",
-                    }}
-                  >
-                    <div className="font-bold text-gray-900 text-sm leading-tight">
-                      {displayName}
-                      {/* {pathInfo && <span className="text-xs text-blue-600 font-normal ml-2">【{pathInfo}】</span>} */}
+                      {/* 显示描述（包含的项目列表） */}
+                      {group.description && (
+                        <div
+                          className="text-xs text-gray-600 mt-2 leading-relaxed whitespace-pre-line"
+                          style={{
+                            display: "-webkit-box",
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {group.description}
+                        </div>
+                      )}
                     </div>
+                  )
+                } else {
+                  // 渲染单个项目
+                  const dataItem = item as DataItem
+                  const matchingTags = dataService.getMatchingTags(dataItem.tags, searchText)
+                  const { displayName, pathInfo } = parseNameAndPath(dataItem.name)
 
-                    {item.description && (
-                      <div
-                        className="text-xs text-gray-600 mt-2 leading-relaxed"
-                        style={{
-                          display: "-webkit-box",
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: "vertical",
-                          overflow: "hidden",
-                        }}
-                      >
-                        {item.description.replace(/[#*`]/g, "")}
+                  return (
+                    <div
+                      key={`${dataItem.name}-${index}`}
+                      onClick={() => {
+                        onItemClick(dataItem)
+                        // 调试：打印路径信息
+                        // dataService.debugPathInfo(dataItem)
+                      }}
+                      className={`p-4 cursor-pointer text-left transition-all duration-300 transform rounded-lg opacity-0 animate-fade-in-up ${
+                        selectedItem && "name" in selectedItem && selectedItem.name === dataItem.name
+                          ? "bg-gray-50 shadow-md scale-101 border-b-2 border-blue-500"
+                          : "bg-white shadow-sm hover:shadow-lg hover:-translate-y-0.5 border border-gray-100"
+                      }`}
+                      style={{
+                        animationDelay: `${index * 100}ms`,
+                        animationFillMode: "forwards",
+                      }}
+                    >
+                      <div className="font-bold text-gray-900 text-sm leading-tight">
+                        {displayName}
+                        {/* {pathInfo && <span className="text-xs text-blue-600 font-normal ml-2">【{pathInfo}】</span>} */}
                       </div>
-                    )}
 
-                    {/* 显示hash信息 */}
-                    {/* {item.hash && (
-                      <div className="text-xs text-green-600 mt-1 font-mono">Hash: {item.hash.substring(0, 8)}...</div>
-                    )} */}
+                      {dataItem.description && (
+                        <div
+                          className="text-xs text-gray-600 mt-2 leading-relaxed"
+                          style={{
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {dataItem.description.replace(/[#*`]/g, "")}
+                        </div>
+                      )}
 
-                    {/* 显示完整路径信息（调试用） */}
-                    {/* {item.pathArray && (
-                      <div className="text-xs text-purple-600 mt-1 font-mono">完整路径: {item.pathArray.join("/")}</div>
-                    )} */}
+                      {/* 显示hash信息 */}
+                      {/* {dataItem.hash && (
+                        <div className="text-xs text-green-600 mt-1 font-mono">Hash: {dataItem.hash.substring(0, 8)}...</div>
+                      )} */}
 
-                    {/* 显示匹配的标签 */}
-                    {matchingTags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {matchingTags.slice(0, 3).map((tag, tagIndex) => (
-                          <Badge
-                            key={tagIndex}
-                            className="bg-blue-50 text-blue-600 border-0 rounded-sm px-1 py-0 text-xs"
-                          >
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )
+                      {/* 显示完整路径信息（调试用） */}
+                      {/* {dataItem.pathArray && (
+                        <div className="text-xs text-purple-600 mt-1 font-mono">完整路径: {dataItem.pathArray.join("/")}</div>
+                      )} */}
+
+                      {/* 显示匹配的标签 */}
+                      {matchingTags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {matchingTags.slice(0, 3).map((tag, tagIndex) => (
+                            <Badge
+                              key={tagIndex}
+                              className="bg-blue-50 text-blue-600 border-0 rounded-sm px-1 py-0 text-xs"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                }
               })}
 
           {/* 加载更多提示 */}

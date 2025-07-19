@@ -85,7 +85,7 @@ export default function Component() {
       <div
         className={`absolute inset-0 flex flex-col items-center justify-center p-8 transition-all duration-700 ease-out ${
           selectedItem
-            ? "transform -translate-x-1/4 -translate-y-1/6 scale-75"
+            ? "transform -translate-x-1/3 -translate-y-1/6 scale-75"
             : "transform translate-x-0 translate-y-0 scale-100"
         }`}
       >
@@ -93,7 +93,7 @@ export default function Component() {
         <div className="text-2xl md:text-3xl lg:text-4xl mb-8 text-center font-medium flex flex-wrap items-center justify-center gap-2">
           <span>在</span>
           <DropdownMenu>
-            <DropdownMenuTrigger className="underline hover:bg-gray-50 px-3 py-2 rounded-md inline-flex items-center gap-1 transition-all duration-200">
+            <DropdownMenuTrigger className="hover:bg-gray-50 px-3 py-2 rounded-md inline-flex items-center gap-1 transition-all duration-200">
               {selectedCategory}
               <ChevronDown className="w-4 h-4" />
             </DropdownMenuTrigger>

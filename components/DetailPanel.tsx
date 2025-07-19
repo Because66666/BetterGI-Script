@@ -219,7 +219,7 @@ export function DetailPanel({ selectedItem, onBack }: DetailPanelProps) {
                 )}
 
                 {/* 详细项目列表（可选，用于调试） */}
-                <div className="mt-6 pt-4 border-t border-gray-100">
+                {/* <div className="mt-6 pt-4 border-t border-gray-100">
                   <h3 className="text-sm font-medium text-gray-900 mb-3">详细信息：</h3>
                   <div className="space-y-3">
                     {selectedItem.items.slice(0, 3).map((item, index) => {
@@ -241,7 +241,7 @@ export function DetailPanel({ selectedItem, onBack }: DetailPanelProps) {
                       </div>
                     )}
                   </div>
-                </div>
+                </div> */}
               </div>
             ) : (
               // 单个项目显示
